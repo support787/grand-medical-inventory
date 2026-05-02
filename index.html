@@ -221,7 +221,7 @@ function saveSetup() {
   const worker = document.getElementById('workerInput').value.trim().replace(/\/$/,'');
   const gemini = document.getElementById('geminiInput').value.trim();
   if (!worker.startsWith('http')) { showToast('Enter a valid Worker URL', 'error'); return; }
-  if (!gemini.startsWith('AIza')) { showToast('Enter a valid Gemini API key', 'error'); return; }
+  if (gemini.length < 10) { showToast('Enter a valid Gemini API key', 'error'); return; }
   localStorage.setItem(CFG_KEY, JSON.stringify({worker, gemini}));
   document.getElementById('setupBanner').classList.remove('visible');
   showToast('Setup saved!', 'success');
