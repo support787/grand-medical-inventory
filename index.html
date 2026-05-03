@@ -10,15 +10,14 @@
 :root{
   --bg:#f5f2ee;--surface:#ffffff;--surface2:#f0ece6;--border:#ddd8d0;
   --ink:#1a1612;--ink2:#6b6560;--ink3:#a09890;
-  --accent:#c8402a;--accent2:#e8956a;--green:#2a7a4a;--blue:#1a4a8a;--gold:#b8860b;
+  --accent:#c8402a;--green:#2a7a4a;--blue:#1a4a8a;--gold:#b8860b;
   --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
   --radius:4px;--shadow:0 2px 12px rgba(0,0,0,0.08);
 }
-*{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;padding-bottom:80px}
 .app-header{background:var(--ink);padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.3)}
 .app-logo{font-family:var(--display);font-size:22px;letter-spacing:3px;color:#fff}
-.app-logo span{color:var(--accent2)}
+.app-logo span{color:#e8956a}
 .header-sub{font-family:var(--mono);font-size:10px;color:#666;letter-spacing:2px}
 .container{max-width:600px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
 #setupBanner{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--radius);padding:20px;display:none}
@@ -69,13 +68,15 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
 .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .field{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
 .field.full{grid-column:1/-1}
+.field.highlight{border-color:#b8d4b8;background:#f0f8f0}
 .field-label{font-size:8px;font-family:var(--mono);letter-spacing:2px;color:var(--ink3);margin-bottom:4px;text-transform:uppercase}
 .field-value{font-size:13px;font-weight:500;color:var(--ink);word-break:break-all;line-height:1.3}
 .field-value.accent{color:var(--accent);font-family:var(--mono)}
+.field-value.green{color:var(--green);font-family:var(--display);font-size:18px;letter-spacing:1px}
 .field-value.muted{color:var(--ink3);font-style:italic;font-weight:300}
 .field-value.editable{cursor:pointer;border-bottom:1px dashed var(--border)}
 .field-value.editable:hover{border-bottom-color:var(--accent);color:var(--accent)}
-.field input{width:100%;border:none;background:transparent;font-size:13px;font-family:var(--sans);font-weight:500;color:var(--ink);outline:none;border-bottom:2px solid var(--accent)}
+.field input,.field textarea{width:100%;border:none;background:transparent;font-size:13px;font-family:var(--sans);font-weight:500;color:var(--ink);outline:none;border-bottom:2px solid var(--accent);resize:vertical}
 .ebay-section{border-top:1px solid var(--border);padding-top:14px}
 .ebay-header{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--ink3);margin-bottom:12px;text-align:center}
 .ebay-card{background:linear-gradient(135deg,#f8f4ff,#f0f8ff);border:1px solid #ddd0f0;border-radius:var(--radius);padding:14px}
@@ -89,8 +90,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
 .ebay-meta{font-family:var(--mono);font-size:10px;color:var(--ink2);letter-spacing:1px;margin-bottom:8px}
 .ebay-desc{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:8px}
 .ebay-ship{font-size:11px;font-family:var(--mono);color:var(--ink3)}
-.ebay-list-btn{width:100%;margin-top:12px;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-family:var(--display);font-size:18px;letter-spacing:2px;cursor:pointer}
+.ebay-actions{display:flex;gap:8px;margin-top:12px}
+.ebay-list-btn{flex:1;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-family:var(--display);font-size:16px;letter-spacing:2px;cursor:pointer}
 .ebay-list-btn:hover{background:#0f3570}
+.copy-btn{padding:14px 16px;background:var(--surface2);color:var(--ink2);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px}
+.copy-btn:hover{border-color:var(--ink);color:var(--ink)}
 .retry-btn{width:100%;padding:13px;background:var(--surface2);color:var(--ink2);border:2px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:12px;cursor:pointer;letter-spacing:1px}
 .generating{text-align:center;color:var(--ink3);font-family:var(--mono);font-size:11px;letter-spacing:2px;padding:16px;animation:pulse 1.2s infinite}
 .empty{text-align:center;color:var(--ink3);font-family:var(--mono);font-size:12px;padding:50px 20px;letter-spacing:1px;line-height:2;border:1px dashed var(--border);border-radius:var(--radius)}
@@ -138,19 +142,23 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
 </div>
 <div id="toast"></div>
 <script>
-var STORAGE_KEY = 'gmi_v2';
+var STORAGE_KEY = 'gmi_v3';
 var CFG_KEY = 'gmi_cfg_v2';
+
 var PART_FIELDS = [
-  {key:'partName',    label:'PART NAME',       accent:false},
-  {key:'manufacturer',label:'MANUFACTURER',    accent:false},
-  {key:'partNumber',  label:'PART NUMBER',     accent:true},
-  {key:'serialNumber',label:'SERIAL NUMBER',   accent:true},
-  {key:'model',       label:'MODEL',           accent:false},
-  {key:'refCatalog',  label:'REF / CATALOG',   accent:true},
-  {key:'lotNumber',   label:'LOT NUMBER',      accent:false},
-  {key:'expiryDate',  label:'MFG / EXPIRY',    accent:false},
-  {key:'condition',   label:'CONDITION',       accent:false}
+  {key:'partName',     label:'PART NAME',         accent:false, full:false},
+  {key:'manufacturer', label:'MANUFACTURER',       accent:false, full:false},
+  {key:'partNumber1',  label:'PART NUMBER 1',      accent:true,  full:false},
+  {key:'partNumber2',  label:'PART NUMBER 2',      accent:true,  full:false},
+  {key:'serialNumber', label:'SERIAL NUMBER',      accent:true,  full:false},
+  {key:'model',        label:'MODEL',              accent:false, full:false},
+  {key:'mfgDate',      label:'MANUFACTURE DATE',   accent:false, full:false},
+  {key:'location',     label:'LOCATION',           accent:false, full:false},
+  {key:'price',        label:'PRICE (USD)',        accent:false, full:false, green:true},
+  {key:'comments',     label:'COMMENTS',           accent:false, full:true,  multiline:true},
+  {key:'notes',        label:'NOTES',              accent:false, full:true}
 ];
+
 var pendingPhotos = [];
 var slotTarget = 0;
 var log = [];
@@ -211,7 +219,6 @@ function renderSlots() {
     if (pendingPhotos[i]) {
       var img = document.createElement('img');
       img.src = pendingPhotos[i].dataUrl;
-      img.alt = 'photo';
       slot.appendChild(img);
       var btn = document.createElement('button');
       btn.className = 'remove-photo';
@@ -333,7 +340,8 @@ function extractWithGemini(photos) {
   for (var i = 0; i < photos.length; i++) {
     if (photos[i]) parts.push({inline_data:{mime_type:photos[i].mediaType, data:photos[i].base64}});
   }
-  parts.push({text:'You are an expert OCR and product identification assistant. The first image is a product label. Additional images show the item itself. Read EVERY piece of text from the label carefully including rotated or angled text. Use item images to identify the product and condition. Return ONLY valid JSON with these exact keys (use "not found" if truly not visible): {"partName":"","manufacturer":"","partNumber":"","serialNumber":"","model":"","refCatalog":"","lotNumber":"","expiryDate":"","condition":"","notes":""}. partName = product name based on label AND appearance. notes = ALL other label text including addresses, voltages, standards. No markdown.'});
+  parts.push({text:'You are an expert at reading medical and industrial equipment labels. Read all text carefully including rotated or angled text.\n\nReturn ONLY valid JSON with these exact keys (use empty string if not found):\n{\n  "partName": "product name based on label and appearance",\n  "manufacturer": "company name",\n  "partNumber1": "first part/reference number found (REF, P/N, Model No)",\n  "partNumber2": "second part/reference number if found, otherwise empty",\n  "serialNumber": "serial number (SN, S/N)",\n  "model": "model name or number",\n  "mfgDate": "manufacture date if shown",\n  "price": "estimated market value in USD for used condition, numbers only like 1895.00",\n  "notes": "key technical specs only in plain language, e.g. 125kV, 2.5A filtration, 200mA. Skip compliance text, certifications, addresses and generic boilerplate."\n}\n\nFor notes: be brief and human. Only include specs that matter to a buyer. No compliance statements.\nNo markdown.'});
+
   return callGemini(parts).then(function(raw) {
     try { return JSON.parse(raw.replace(/```json|```/g,'').trim()); }
     catch(e) { return {partName:'Unknown', notes:raw}; }
@@ -352,9 +360,21 @@ function generateListing(part, photos) {
   for (var i = 1; i < photos.length; i++) {
     if (photos[i]) content.push({type:'image', source:{type:'base64', media_type:photos[i].mediaType, data:photos[i].base64}});
   }
-  var itemJson = JSON.stringify(part, null, 2);
-  content.push({type:'text', text:'Create a complete eBay listing for this medical/industrial equipment. Label data: ' + itemJson + '. Generate: title (max 80 chars), eBay category path, realistic market price for used medical/industrial equipment, detailed description, shipping note, and brief price reasoning. Return ONLY valid JSON: {"title":"","category":"","price":"","suggestedPriceReason":"","condition":"Used","description":"","shippingNote":""}'});
-  var sys = 'You are an expert eBay seller specializing in used medical and industrial equipment. You know current market prices. Always provide realistic competitive prices. Return ONLY valid JSON, no markdown.';
+  var itemJson = JSON.stringify({
+    partName: part.partName,
+    manufacturer: part.manufacturer,
+    partNumber1: part.partNumber1,
+    partNumber2: part.partNumber2,
+    serialNumber: part.serialNumber,
+    model: part.model,
+    mfgDate: part.mfgDate,
+    notes: part.notes
+  }, null, 2);
+
+  content.push({type:'text', text:'Create a professional eBay listing for this used medical/industrial equipment.\n\nItem data:\n' + itemJson + '\n\nReturn ONLY valid JSON:\n{\n  "title": "compelling eBay title max 80 chars, include brand model and key part numbers",\n  "category": "specific eBay category path",\n  "price": "realistic market price numbers only e.g. 1895.00",\n  "suggestedPriceReason": "one sentence explaining price estimate",\n  "description": "professional 3-4 sentence description. Natural, not AI-sounding. Include key specs and part numbers buyers search for. Mention sold as-is used condition.",\n  "shippingNote": "brief shipping note"\n}'});
+
+  var sys = 'You are an experienced eBay seller specializing in used medical and industrial equipment. Write naturally, not like AI. Keep descriptions concise and professional. Return ONLY valid JSON, no markdown.';
+
   return callClaude([{role:'user', content:content}], sys).then(function(raw) {
     try {
       var listing = JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -371,24 +391,40 @@ document.getElementById('scanBtn').onclick = function() {
   var btn = document.getElementById('scanBtn');
   btn.disabled = true;
   btn.textContent = 'READING LABEL...';
+
   extractWithGemini(pendingPhotos).then(function(extracted) {
     btn.textContent = 'GENERATING LISTING...';
     var id = 'PART-' + String(log.length+1).padStart(4,'0');
     var thumbs = pendingPhotos.map(function(p){ return p ? p.dataUrl : null; });
     var part = {id:id, scannedAt:new Date().toISOString(), thumbs:thumbs};
-    var fields = ['partName','manufacturer','partNumber','serialNumber','model','refCatalog','lotNumber','expiryDate','condition','notes'];
-    fields.forEach(function(k){ part[k] = extracted[k] || 'not found'; });
+    var fields = ['partName','manufacturer','partNumber1','partNumber2','serialNumber','model','mfgDate','notes'];
+    fields.forEach(function(k){ part[k] = extracted[k] || ''; });
+    part.price = extracted.price || '';
+    part.location = '';
+    part.comments = '';
     part.ebayListing = null;
+
     log.unshift(part);
     saveLog();
     renderLog();
+
     return generateListing(extracted, pendingPhotos).then(function(listing) {
       part.ebayListing = listing;
+      // Use listing price if Gemini didn't provide one
+      if (!part.price && listing && listing.price) {
+        part.price = listing.price;
+      }
     }).catch(function() {
       part.ebayListing = {error:true};
     }).then(function() {
       saveLog();
       updateEbay(part.id, part.ebayListing);
+      // Update price field display
+      var priceEl = document.getElementById('fv-' + part.id + '-price');
+      if (priceEl && part.price) {
+        priceEl.className = 'field-value green editable';
+        priceEl.textContent = '$' + part.price;
+      }
       pendingPhotos = [];
       renderSlots();
       showToast('Item scanned!', 'success');
@@ -420,16 +456,27 @@ function cardHTML(p) {
       if (t) thumbs += '<img class="photo-thumb" src="' + t + '" alt="photo"/>';
     });
   }
+
   var fields = '';
   PART_FIELDS.forEach(function(f) {
     var val = p[f.key];
-    var empty = !val || val === 'not found';
-    var cls = empty ? 'muted' : (f.accent ? 'accent' : '');
-    fields += '<div class="field"><div class="field-label">' + f.label + '</div>' +
-      '<div class="field-value ' + cls + ' editable" id="fv-' + p.id + '-' + f.key + '" data-pid="' + p.id + '" data-fkey="' + f.key + '">' +
-      (empty ? 'tap to edit' : escHtml(val)) + '</div></div>';
+    var empty = !val || val === '';
+    var cls = '';
+    if (f.green) cls = empty ? 'muted' : 'green';
+    else if (f.accent) cls = empty ? 'muted' : 'accent';
+    else cls = empty ? 'muted' : '';
+
+    var displayVal = empty ? 'tap to edit' : escHtml(val);
+    if (f.green && !empty) displayVal = '$' + escHtml(val);
+
+    var fieldCls = 'field' + (f.full ? ' full' : '') + (f.highlight ? ' highlight' : '');
+
+    fields += '<div class="' + fieldCls + '">' +
+      '<div class="field-label">' + f.label + '</div>' +
+      '<div class="field-value ' + cls + ' editable" id="fv-' + p.id + '-' + f.key + '" data-pid="' + p.id + '" data-fkey="' + f.key + '" data-multiline="' + (f.multiline ? '1' : '0') + '">' +
+      displayVal + '</div></div>';
   });
-  var notes = p.notes && p.notes !== 'not found' ? '<div class="field full"><div class="field-label">NOTES</div><div class="field-value" style="font-size:11px;line-height:1.6">' + escHtml(p.notes) + '</div></div>' : '';
+
   return '<div class="part-card" id="card-' + p.id + '">' +
     '<div class="card-header" data-id="' + p.id + '">' +
     '<span class="card-part-id">' + p.id + '</span>' +
@@ -439,7 +486,7 @@ function cardHTML(p) {
     '</div>' +
     '<div class="card-body">' +
     (thumbs ? '<div class="photos-strip">' + thumbs + '</div>' : '') +
-    '<div class="fields-grid">' + fields + notes + '</div>' +
+    '<div class="fields-grid">' + fields + '</div>' +
     '<div class="ebay-section"><div class="ebay-header">— EBAY LISTING —</div>' +
     '<div id="ebay-' + p.id + '">' + ebayHTML(p.ebayListing, p.id) + '</div></div>' +
     '</div></div>';
@@ -452,12 +499,12 @@ function ebayHTML(listing, id) {
   return '<div class="ebay-card">' +
     '<div class="ebay-title-text">' + escHtml(listing.title||'') + '</div>' +
     '<div class="ebay-price-row">' +
-    '<div class="ebay-price" id="pd-' + id + '">' + escHtml(price) + '</div>' +
-    '<button class="price-edit-btn" data-id="' + id + '">&#9998; Edit price</button>' +
+    '<div class="ebay-price" id="pd-' + id + '">$' + escHtml(price) + '</div>' +
+    '<button class="price-edit-btn" data-id="' + id + '">&#9998; Edit</button>' +
     '</div>' +
     '<div id="pi-' + id + '" style="display:none">' +
     '<div class="price-input-row">' +
-    '<input class="price-input" id="pv-' + id + '" type="text" value="' + escHtml(price) + '" placeholder="e.g. 149.99"/>' +
+    '<input class="price-input" id="pv-' + id + '" type="text" value="' + escHtml(price) + '" placeholder="e.g. 1895.00"/>' +
     '<button class="price-save-btn" data-id="' + id + '">SAVE</button>' +
     '</div>' +
     (listing.suggestedPriceReason ? '<div style="font-size:10px;font-family:var(--mono);color:var(--ink3);margin-bottom:8px">&#128161; ' + escHtml(listing.suggestedPriceReason) + '</div>' : '') +
@@ -465,8 +512,10 @@ function ebayHTML(listing, id) {
     '<div class="ebay-meta">' + escHtml((listing.condition||'Used') + (listing.category ? ' · ' + listing.category : '')) + '</div>' +
     '<div class="ebay-desc">' + escHtml(listing.description||'') + '</div>' +
     (listing.shippingNote ? '<div class="ebay-ship">&#128230; ' + escHtml(listing.shippingNote) + '</div>' : '') +
+    '<div class="ebay-actions">' +
+    '<button class="copy-btn" data-id="' + id + '">&#128203; Copy</button>' +
     '<button class="ebay-list-btn" data-id="' + id + '">LIST ON EBAY &#8594;</button>' +
-    '</div>';
+    '</div></div>';
 }
 
 function updateEbay(id, listing) {
@@ -477,7 +526,7 @@ function updateEbay(id, listing) {
 // Event delegation
 document.getElementById('partsList').onclick = function(e) {
   var el = e.target;
-  // Delete
+
   if (el.classList.contains('card-delete')) {
     var id = el.getAttribute('data-id');
     if (confirm('Delete this item?')) {
@@ -486,56 +535,78 @@ document.getElementById('partsList').onclick = function(e) {
     }
     return;
   }
-  // Toggle card
+
   if (el.classList.contains('card-header') || el.parentElement.classList.contains('card-header')) {
     var hdr = el.classList.contains('card-header') ? el : el.parentElement;
     var id = hdr.getAttribute('data-id');
     if (id) document.getElementById('card-' + id).classList.toggle('collapsed');
     return;
   }
-  // Edit field
+
   if (el.classList.contains('editable')) {
     var pid = el.getAttribute('data-pid');
     var fkey = el.getAttribute('data-fkey');
+    var multiline = el.getAttribute('data-multiline') === '1';
     var part = log.find(function(p){ return p.id === pid; });
-    var cur = part ? (part[fkey] === 'not found' ? '' : part[fkey] || '') : '';
-    el.innerHTML = '<input type="text" value="' + escHtml(cur) + '"/>';
-    var inp = el.querySelector('input');
-    inp.focus();
-    inp.onblur = function() {
-      var val = this.value.trim();
-      if (part) { part[fkey] = val || 'not found'; saveLog(); }
-      var field = PART_FIELDS.find(function(f){ return f.key === fkey; });
-      var empty = !val;
-      el.className = 'field-value ' + (empty ? 'muted' : (field && field.accent ? 'accent' : '')) + ' editable';
-      el.textContent = empty ? 'tap to edit' : val;
-    };
-    inp.onkeydown = function(e){ if(e.key==='Enter') this.blur(); };
+    var cur = part ? (part[fkey] || '') : '';
+    if (multiline) {
+      el.innerHTML = '<textarea rows="3">' + escHtml(cur) + '</textarea>';
+      var inp = el.querySelector('textarea');
+      inp.focus();
+      inp.onblur = function() { saveFieldVal(pid, fkey, this.value, el); };
+    } else {
+      el.innerHTML = '<input type="text" value="' + escHtml(cur) + '"/>';
+      var inp = el.querySelector('input');
+      inp.focus();
+      inp.onblur = function() { saveFieldVal(pid, fkey, this.value, el); };
+      inp.onkeydown = function(e){ if(e.key==='Enter') this.blur(); };
+    }
     return;
   }
-  // Edit price button
+
   if (el.classList.contains('price-edit-btn')) {
     var id = el.getAttribute('data-id');
     document.getElementById('pi-' + id).style.display = 'block';
     document.getElementById('pv-' + id).focus();
     return;
   }
-  // Save price
+
   if (el.classList.contains('price-save-btn')) {
     var id = el.getAttribute('data-id');
     var val = document.getElementById('pv-' + id).value.trim();
     var part = log.find(function(p){ return p.id === id; });
     if (part && part.ebayListing) {
       part.ebayListing.price = val;
+      part.price = val;
       part.ebayListing.ebayUrl = buildEbayUrl(part.ebayListing);
       saveLog();
-      document.getElementById('pd-' + id).textContent = val;
+      document.getElementById('pd-' + id).textContent = '$' + val;
       document.getElementById('pi-' + id).style.display = 'none';
+      var priceEl = document.getElementById('fv-' + id + '-price');
+      if (priceEl) { priceEl.className = 'field-value green editable'; priceEl.textContent = '$' + val; }
       showToast('Price updated!', 'success');
     }
     return;
   }
-  // Retry listing
+
+  if (el.classList.contains('copy-btn')) {
+    var id = el.getAttribute('data-id');
+    var part = log.find(function(p){ return p.id === id; });
+    if (part && part.ebayListing) {
+      var text = 'TITLE: ' + (part.ebayListing.title||'') + '\n\n' +
+        'PRICE: $' + (part.ebayListing.price||'') + '\n' +
+        'CATEGORY: ' + (part.ebayListing.category||'') + '\n\n' +
+        'DESCRIPTION:\n' + (part.ebayListing.description||'') + '\n\n' +
+        'SHIPPING: ' + (part.ebayListing.shippingNote||'');
+      navigator.clipboard.writeText(text).then(function(){
+        showToast('Listing copied!', 'success');
+      }).catch(function(){
+        showToast('Copy failed — try manually', 'error');
+      });
+    }
+    return;
+  }
+
   if (el.classList.contains('retry-btn')) {
     var id = el.getAttribute('data-id');
     var part = log.find(function(p){ return p.id === id; });
@@ -543,16 +614,14 @@ document.getElementById('partsList').onclick = function(e) {
     updateEbay(id, null);
     generateListing(part, []).then(function(listing) {
       part.ebayListing = listing;
-      saveLog();
-      updateEbay(id, listing);
+      saveLog(); updateEbay(id, listing);
     }).catch(function() {
       part.ebayListing = {error:true};
-      saveLog();
-      updateEbay(id, {error:true});
+      saveLog(); updateEbay(id, {error:true});
     });
     return;
   }
-  // List on eBay
+
   if (el.classList.contains('ebay-list-btn')) {
     var id = el.getAttribute('data-id');
     var part = log.find(function(p){ return p.id === id; });
@@ -564,9 +633,28 @@ document.getElementById('partsList').onclick = function(e) {
   }
 };
 
+function saveFieldVal(pid, fkey, value, el) {
+  var part = log.find(function(p){ return p.id === pid; });
+  if (!part) return;
+  part[fkey] = value;
+  saveLog();
+  var field = PART_FIELDS.find(function(f){ return f.key === fkey; });
+  var empty = !value;
+  var cls = '';
+  if (field && field.green) cls = empty ? 'muted' : 'green';
+  else if (field && field.accent) cls = empty ? 'muted' : 'accent';
+  else cls = empty ? 'muted' : '';
+  el.className = 'field-value ' + cls + ' editable';
+  if (field && field.green && !empty) el.textContent = '$' + value;
+  else el.textContent = empty ? 'tap to edit' : value;
+  el.setAttribute('data-pid', pid);
+  el.setAttribute('data-fkey', fkey);
+  el.setAttribute('data-multiline', (field && field.multiline) ? '1' : '0');
+}
+
 // Export
 document.getElementById('exportCsvBtn').onclick = function() {
-  var headers = ['id','scannedAt','partName','manufacturer','partNumber','serialNumber','model','refCatalog','lotNumber','expiryDate','condition','notes','ebayTitle','ebayPrice','ebayCategory'];
+  var headers = ['id','scannedAt','partName','manufacturer','partNumber1','partNumber2','serialNumber','model','mfgDate','location','price','comments','notes','ebayTitle','ebayPrice','ebayCategory'];
   var rows = log.map(function(p) {
     return headers.map(function(h) {
       var v = '';
