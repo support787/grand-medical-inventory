@@ -405,7 +405,7 @@ function uploadAllPhotos(photos, partId) {
 function submitToFirestore(partId, websiteData) {
   return new Promise(function(res, rej) {
     if (!window.fbDb) { rej(new Error('Firebase not ready')); return; }
-    var colRef = window.fbCollection(window.fbDb, 'Parts');
+    var colRef = window.fbCollection(window.fbDb, 'products');
     window.fbAddDoc(colRef, websiteData).then(function(docRef) {
       res(docRef.id);
     }).catch(rej);
@@ -469,7 +469,7 @@ function generateListing(part, photos) {
     mfgDate: part.mfgDate, notes: part.notes
   }, null, 2);
 
-  content.push({type:'text', text:'Create a professional eBay listing AND a website description for this used medical/industrial equipment.\n\nItem data:\n' + itemJson + '\n\nReturn ONLY valid JSON:\n{\n  "title": "eBay title max 80 chars, include brand model and key part numbers",\n  "category": "specific eBay category path",\n  "price": "realistic market price numbers only e.g. 1895.00",\n  "suggestedPriceReason": "one sentence explaining price",\n  "description": "professional 3-4 sentence eBay description. Natural not AI-sounding. Include key specs and part numbers. Mention sold as-is used.",\n  "websiteDescription": "2-3 sentence description for medical equipment website listing. Professional and concise. Include part numbers and key specs.",\n  "shippingNote": "brief shipping note"\n}'});
+  content.push({type:'text', text:'Create a professional eBay listing AND a website description for this used medical/industrial equipment.\n\nItem data:\n' + itemJson + '\n\nReturn ONLY valid JSON:\n{\n  "title": "eBay title max 80 chars, include brand model name and key part numbers",\n  "category": "specific eBay category path",\n  "price": "realistic market price numbers only e.g. 1895.00",\n  "suggestedPriceReason": "one sentence explaining price",\n  "description": "professional 3-4 sentence eBay description. Natural not AI-sounding. Include model name, key specs and part numbers. Do NOT mention sale terms or condition.",\n  "websiteDescription": "2-3 sentence professional description for medical equipment website. Include model name, part numbers and key technical specs. No sale terms or condition statements.",\n  "shippingNote": "brief shipping note"\n}'});
 
   var sys = 'You are an experienced seller of used medical and industrial equipment. Write naturally and professionally. Return ONLY valid JSON, no markdown.';
   return callClaude([{role:'user', content:content}], sys).then(function(raw) {
@@ -785,13 +785,17 @@ document.getElementById('partsList').onclick = function(e) {
     var comments = document.getElementById('ws-comments-' + id).value.trim();
 
     var websiteData = {
-      Modality: modality,
-      Brand: brand,
-      PartNumber: pn,
-      Description: desc,
-      ImageURL: part.imageUrls || '',
-      Location: loc,
-      Comments: comments,
+      MODALITY: modality,
+      MODELITY: modality,
+      MANUFACTURER: brand,
+      BRAND: brand,
+      'PART NUMBER': pn,
+      DESCRIPTION: desc,
+      IMAGE: part.imageUrls ? part.imageUrls.split(';')[0] : '',
+      IMAGES: part.imageUrls || '',
+      LOCATION: loc,
+      COMMENTS: comments,
+      PRICE: part.price || '',
       createdAt: new Date().toISOString()
     };
 
