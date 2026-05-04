@@ -787,8 +787,8 @@ document.getElementById('partsList').onclick = function(e) {
     var websiteData = {
       MODALITY: modality,
       MODELITY: modality,
-      MANUFACTURER: brand,
-      BRAND: brand,
+      MANUFACTURER: brand.toUpperCase(),
+      BRAND: brand.toUpperCase(),
       'PART NUMBER': pn,
       DESCRIPTION: desc,
       IMAGE: part.imageUrls ? part.imageUrls.split(';')[0] : '',
