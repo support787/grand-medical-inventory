@@ -153,6 +153,10 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
     <button class="export-btn" id="exportCsvBtn">&#8595; EXPORT CSV</button>
     <button class="export-btn" id="exportJsonBtn">&#8595; EXPORT JSON</button>
   </div>
+  <div class="export-row">
+    <button class="export-btn" id="bulkCopyBtn">&#128203; BULK COPY FOR EBAY</button>
+    <button class="export-btn" style="color:#c8402a;border-color:#c8402a" id="clearAllBtn">&#128465; CLEAR ALL</button>
+  </div>
   <div id="partsList"></div>
 </div>
 <div id="toast"></div>
@@ -892,6 +896,45 @@ function dl(name,type,content) {
   a.href = URL.createObjectURL(new Blob([content],{type:type}));
   a.download = name; a.click();
 }
+
+// Bulk export for eBay (tab-separated file with timestamp)
+document.getElementById('bulkCopyBtn').onclick = function() {
+  if (!log.length) { showToast('No items to export', 'error'); return; }
+  var headers = ['PART ID','TITLE','PRICE','CATEGORY','PART NUMBER 1','PART NUMBER 2','MANUFACTURER','MODEL','MFG DATE','DESCRIPTION','SHIPPING'];
+  var rows = [headers.join('\t')];
+  log.forEach(function(p) {
+    var l = p.ebayListing || {};
+    rows.push([
+      p.id,
+      l.title || '',
+      l.price ? '$' + l.price : '',
+      l.category || '',
+      p.partNumber1 || '',
+      p.partNumber2 || '',
+      p.manufacturer || '',
+      p.model || '',
+      p.mfgDate || '',
+      l.description || '',
+      l.shippingNote || ''
+    ].join('\t'));
+  });
+  var text = rows.join('\n');
+  var now = new Date();
+  var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') +
+            '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+  dl('ebay-listings-' + ts + '.tsv', 'text/tab-separated-values', text);
+  showToast(log.length + ' items exported!', 'success');
+};
+
+// Clear all
+document.getElementById('clearAllBtn').onclick = function() {
+  if (!log.length) { showToast('Nothing to clear', 'error'); return; }
+  if (!confirm('Delete ALL ' + log.length + ' items from the app? This cannot be undone.')) return;
+  log = [];
+  saveLog();
+  renderLog();
+  showToast('All items cleared', 'success');
+};
 
 // Init
 log = loadLog();
