@@ -132,6 +132,10 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
       <label>GEMINI API KEY</label>
       <input type="password" id="geminiInput" placeholder="AIza..."/>
     </div>
+    <div class="setup-field">
+      <label>YOUR NAME</label>
+      <input type="text" id="usernameInput" placeholder="e.g. Sean, John..."/>
+    </div>
     <button class="setup-save" id="setupSaveBtn">SAVE &amp; START</button>
   </div>
   <div class="scan-section">
@@ -241,7 +245,8 @@ document.getElementById('setupSaveBtn').onclick = function() {
   var gemini = document.getElementById('geminiInput').value.trim();
   if (!worker || worker.length < 10) { showToast('Enter a valid Worker URL', 'error'); return; }
   if (!gemini || gemini.length < 10) { showToast('Enter a valid Gemini API key', 'error'); return; }
-  localStorage.setItem(CFG_KEY, JSON.stringify({worker:worker, gemini:gemini}));
+  var username = document.getElementById('usernameInput').value.trim() || 'Unknown';
+  localStorage.setItem(CFG_KEY, JSON.stringify({worker:worker, gemini:gemini, username:username}));
   document.getElementById('setupBanner').classList.remove('visible');
   showToast('Setup saved!', 'success');
 };
@@ -252,6 +257,7 @@ document.getElementById('setupSaveBtn').onclick = function() {
     document.getElementById('setupBanner').classList.remove('visible');
     document.getElementById('workerInput').value = cfg.worker;
     document.getElementById('geminiInput').value = cfg.gemini;
+    document.getElementById('usernameInput').value = cfg.username || '';
   }
 })();
 
@@ -521,7 +527,7 @@ document.getElementById('scanBtn').onclick = function() {
         if (!part.price && listing && listing.price) part.price = listing.price;
         if (listing && listing.websiteDescription) part.websiteDescription = listing.websiteDescription;
         // Set comments = Claude | $price
-        part.comments = 'Claude | $' + (part.price || '');
+        part.comments = 'Claude | $' + (part.price || '') + ' | ' + (getConfig().username || 'Unknown');
       }).catch(function() {
         part.ebayListing = {error:true};
       }).then(function() {
@@ -794,8 +800,8 @@ document.getElementById('partsList').onclick = function(e) {
       IMAGE: part.imageUrls ? part.imageUrls.split(';')[0] : '',
       IMAGES: part.imageUrls || '',
       LOCATION: loc,
-      COMMENTS: comments,
-      PRICE: part.price || '',
+      COMMENTS: 'Claude | ' + (getConfig().username || 'Unknown'),
+      PRICE: '',
       createdAt: new Date().toISOString()
     };
 
