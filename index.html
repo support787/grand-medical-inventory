@@ -491,6 +491,12 @@ function generateListing(part, photos) {
 document.getElementById('scanBtn').onclick = function() {
   var photos = pendingPhotos.filter(Boolean);
   if (photos.length === 0) { showToast('Add at least one photo first', 'error'); return; }
+  var cfg = getConfig();
+  if (!cfg.worker || !cfg.gemini) {
+    document.getElementById('setupBanner').classList.add('visible');
+    showToast('Please complete setup first', 'error');
+    return;
+  }
   var btn = document.getElementById('scanBtn');
   btn.disabled = true;
   btn.textContent = 'UPLOADING PHOTOS...';
@@ -509,6 +515,7 @@ document.getElementById('scanBtn').onclick = function() {
       var part = {id:id, scannedAt:new Date().toISOString(), thumbs:thumbs, imageUrls:imageUrls};
       var fields = ['partName','manufacturer','partNumber1','partNumber2','serialNumber','model','mfgDate','notes'];
       fields.forEach(function(k){ part[k] = extracted[k] || ''; });
+      if (part.manufacturer) part.manufacturer = part.manufacturer.toUpperCase();
       part.price = extracted.price || '';
       part.location = '';
       part.comments = '';
@@ -539,7 +546,12 @@ document.getElementById('scanBtn').onclick = function() {
       });
     });
   }).catch(function(err) {
-    showToast('Error: ' + err.message, 'error');
+    console.error('Scan error:', err);
+    var msg = err.message || 'Unknown error';
+    if (msg.indexOf('403') > -1) msg = 'Firebase upload failed - check Storage rules';
+    else if (msg.indexOf('429') > -1) msg = 'Gemini rate limit - wait a minute and retry';
+    else if (msg.indexOf('404') > -1) msg = 'Gemini model not found - check API key';
+    showToast('Failed: ' + msg, 'error');
   }).then(function() {
     btn.disabled = false;
     btn.textContent = '\u26A1 ANALYZE & LIST';
