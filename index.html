@@ -968,11 +968,6 @@ function getEbayCategory(modality) {
   return EBAY_CATEGORIES[modality] || EBAY_CATEGORIES['DEFAULT'];
 }
 
-// Export eBay Draft CSV
-document.getElementById('exportCsvBtn').addEventListener('dblclick', function() {
-  // Double click exports eBay draft format
-});
-
 function exportEbayDraft() {
   if (!log.length) { showToast('No items to export', 'error'); return; }
   var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format';
