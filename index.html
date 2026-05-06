@@ -154,8 +154,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
     <button class="export-btn" id="exportJsonBtn">&#8595; EXPORT JSON</button>
   </div>
   <div class="export-row">
-    <button class="export-btn" id="bulkCopyBtn">&#128203; BULK COPY FOR EBAY</button>
+    <button class="export-btn" id="bulkCopyBtn">&#128203; BULK EXPORT FOR EBAY</button>
     <button class="export-btn" style="color:#c8402a;border-color:#c8402a" id="clearAllBtn">&#128465; CLEAR ALL</button>
+  </div>
+  <div class="export-row">
+    <button class="export-btn" style="color:#1a4a8a;border-color:#1a4a8a" id="ebayDraftBtn">&#8679; EXPORT EBAY DRAFT CSV</button>
   </div>
   <div id="partsList"></div>
 </div>
@@ -926,6 +929,9 @@ document.getElementById('bulkCopyBtn').onclick = function() {
   showToast(log.length + ' items exported!', 'success');
 };
 
+// eBay Draft CSV export
+document.getElementById('ebayDraftBtn').onclick = exportEbayDraft;
+
 // Clear all
 document.getElementById('clearAllBtn').onclick = function() {
   if (!log.length) { showToast('Nothing to clear', 'error'); return; }
@@ -935,6 +941,85 @@ document.getElementById('clearAllBtn').onclick = function() {
   renderLog();
   showToast('All items cleared', 'success');
 };
+
+// eBay Category IDs by modality
+var EBAY_CATEGORIES = {
+  'CT':           '184537',  // Radiology X-Ray Machines & Equipment
+  'MRI':          '184520',  // Medical Lab Equipment
+  'CATH':         '184520',
+  'C-ARM':        '184537',
+  'X-RAY':        '184537',
+  'MAMMO':        '184537',
+  'PET/CT':       '184537',
+  'TUBE':         '184537',
+  'SPECT/CT':     '184537',
+  'ULTRASOUND':   '184520',
+  'CR/PRINTER':   '184537',
+  'INJECTOR':     '184520',
+  'MONITOR':      '58058',   // Monitors
+  'UPS':          '182086',  // UPS
+  'POWER SUPPLY': '183064',  // Power Supplies
+  'WORKSTATION':  '179',     // Computers
+  'NETWORK':      '11176',   // Network Equipment
+  'DEFAULT':      '184520'
+};
+
+function getEbayCategory(modality) {
+  return EBAY_CATEGORIES[modality] || EBAY_CATEGORIES['DEFAULT'];
+}
+
+// Export eBay Draft CSV
+document.getElementById('exportCsvBtn').addEventListener('dblclick', function() {
+  // Double click exports eBay draft format
+});
+
+function exportEbayDraft() {
+  if (!log.length) { showToast('No items to export', 'error'); return; }
+  var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format';
+  var rows = [
+    '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,',
+    '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,',
+    '"#INFO After you have successfully uploaded your draft from the Seller Hub Reports tab, complete your drafts to active listings here: https://www.ebay.com/sh/lst/drafts",,,,,,,,,,',
+    '#INFO,,,,,,,,,,',
+    header
+  ];
+
+  log.forEach(function(p) {
+    var l = p.ebayListing || {};
+    var title = (l.title || p.partName || '').substring(0, 80);
+    var price = (l.price || p.price || '').replace(/[^0-9.]/g, '');
+    var desc = l.description || '';
+    var imageUrl = p.imageUrls ? p.imageUrls.split(';')[0] : '';
+    var catId = getEbayCategory(p.modality || '');
+    var sku = p.id;
+
+    // Escape CSV fields
+    function csvField(val) {
+      val = String(val || '').replace(/"/g, '""');
+      return '"' + val + '"';
+    }
+
+    rows.push([
+      'Draft',
+      csvField(sku),
+      catId,
+      csvField(title),
+      '',  // UPC blank
+      price || '',
+      '1',
+      csvField(imageUrl),
+      '3000',  // Used
+      csvField(desc),
+      'FixedPrice'
+    ].join(','));
+  });
+
+  var now = new Date();
+  var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  dl('eBay-draft-listings-' + ts + '.csv', 'text/csv', rows.join('
+'));
+  showToast(log.length + ' items exported for eBay!', 'success');
+}
 
 // Init
 log = loadLog();
