@@ -153,6 +153,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
     <button class="export-btn" id="exportJsonBtn">&#8595; EXPORT JSON</button>
   </div>
   <div class="export-row">
+    <button class="export-btn" style="color:#1a4a8a;border-color:#1a4a8a" id="ebayDraftBtn">&#8679; EXPORT ALL TO EBAY DRAFT</button>
     <button class="export-btn" style="color:#c8402a;border-color:#c8402a" id="clearAllBtn">&#128465; CLEAR ALL</button>
   </div>
   <div id="partsList"></div>
@@ -894,6 +895,9 @@ function dl(name,type,content) {
   a.href = URL.createObjectURL(new Blob([content],{type:type}));
   a.download = name; a.click();
 }
+
+// Bulk eBay Draft CSV export
+document.getElementById('ebayDraftBtn').onclick = exportEbayDraft;
 
 // Clear all
 document.getElementById('clearAllBtn').onclick = function() {
