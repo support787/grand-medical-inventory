@@ -103,9 +103,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
 .ebay-desc{font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:8px}
 .ebay-ship{font-size:11px;font-family:var(--mono);color:var(--ink3)}
 .ebay-actions{display:flex;gap:8px;margin-top:12px}
-.ebay-list-btn{flex:1;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-family:var(--display);font-size:16px;letter-spacing:2px;cursor:pointer}
-.ebay-list-btn:hover{background:#0f3570}
-.copy-btn{padding:14px 16px;background:var(--surface2);color:var(--ink2);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px}
+.ebay-draft-btn{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-family:var(--display);font-size:16px;letter-spacing:2px;cursor:pointer}
+.ebay-draft-btn:hover{background:#0f3570}
 .retry-btn{width:100%;padding:13px;background:var(--surface2);color:var(--ink2);border:2px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:12px;cursor:pointer;letter-spacing:1px}
 .generating{text-align:center;color:var(--ink3);font-family:var(--mono);font-size:11px;letter-spacing:2px;padding:16px;animation:pulse 1.2s infinite}
 .empty{text-align:center;color:var(--ink3);font-family:var(--mono);font-size:12px;padding:50px 20px;letter-spacing:1px;line-height:2;border:1px dashed var(--border);border-radius:var(--radius)}
@@ -154,11 +153,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
     <button class="export-btn" id="exportJsonBtn">&#8595; EXPORT JSON</button>
   </div>
   <div class="export-row">
-    <button class="export-btn" id="bulkCopyBtn">&#128203; BULK EXPORT FOR EBAY</button>
     <button class="export-btn" style="color:#c8402a;border-color:#c8402a" id="clearAllBtn">&#128465; CLEAR ALL</button>
-  </div>
-  <div class="export-row">
-    <button class="export-btn" style="color:#1a4a8a;border-color:#1a4a8a" id="ebayDraftBtn">&#8679; EXPORT EBAY DRAFT CSV</button>
   </div>
   <div id="partsList"></div>
 </div>
@@ -671,8 +666,7 @@ function ebayHTML(listing, id) {
     '<div class="ebay-desc">' + escHtml(listing.description||'') + '</div>' +
     (listing.shippingNote ? '<div class="ebay-ship">&#128230; ' + escHtml(listing.shippingNote) + '</div>' : '') +
     '<div class="ebay-actions">' +
-    '<button class="copy-btn" data-id="' + id + '">&#128203; Copy</button>' +
-    '<button class="ebay-list-btn" data-id="' + id + '">LIST ON EBAY &#8594;</button>' +
+    '<button class="ebay-draft-btn" data-id="' + id + '">&#8679; EXPORT THIS TO EBAY DRAFT</button>' +
     '</div></div>';
 }
 
@@ -752,20 +746,31 @@ document.getElementById('partsList').onclick = function(e) {
     return;
   }
 
-  if (el.classList.contains('copy-btn')) {
+  if (el.classList.contains('ebay-draft-btn')) {
     var id = el.getAttribute('data-id');
     var part = log.find(function(p){ return p.id === id; });
-    if (part && part.ebayListing) {
-      var text = 'TITLE: ' + (part.ebayListing.title||'') + '\n\nPRICE: $' + (part.ebayListing.price||'') +
-        '\nCATEGORY: ' + (part.ebayListing.category||'') +
-        '\n\nDESCRIPTION:\n' + (part.ebayListing.description||'') +
-        '\n\nSHIPPING: ' + (part.ebayListing.shippingNote||'');
-      navigator.clipboard.writeText(text).then(function(){
-        showToast('Listing copied!', 'success');
-      }).catch(function(){
-        showToast('Copy failed', 'error');
-      });
+    if (!part || !part.ebayListing) { showToast('No listing data yet', 'error'); return; }
+    var l = part.ebayListing;
+    var imageUrl = part.imageUrls ? part.imageUrls.split(';')[0] : '';
+    if (imageUrl && imageUrl.indexOf('firebasestorage') > -1) {
+      imageUrl = imageUrl.split('?')[0] + '?alt=media';
     }
+    var catId = getEbayCategory(part.modality || '');
+    var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format';
+    var rows = [
+      '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,,,',
+      '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,',
+      '#INFO After you have successfully uploaded your draft complete your drafts here: https://www.ebay.com/sh/lst/drafts,,,,,,,,,,',
+      '#INFO,,,,,,,,,,',
+      header
+    ];
+    function csvF(val) { return '"' + String(val||'').replace(/"/g,'""') + '"'; }
+    var price = (l.price||'').replace(/[^0-9.]/g,'');
+    rows.push(['Draft', csvF(part.id), catId, csvF((l.title||'').substring(0,80)), '', price, '1', csvF(imageUrl), '3000', csvF(l.description||''), 'FixedPrice'].join(','));
+    var now = new Date();
+    var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    dl('eBay-draft-' + part.id + '-' + ts + '.csv', 'text/csv', rows.join('\n'));
+    showToast('eBay draft exported for ' + part.id, 'success');
     return;
   }
 
@@ -781,16 +786,6 @@ document.getElementById('partsList').onclick = function(e) {
       part.ebayListing = {error:true};
       saveLog(); updateEbay(id, {error:true});
     });
-    return;
-  }
-
-  if (el.classList.contains('ebay-list-btn')) {
-    var id = el.getAttribute('data-id');
-    var part = log.find(function(p){ return p.id === id; });
-    if (part && part.ebayListing) {
-      window.open(buildEbayUrl(part.ebayListing), '_blank');
-      showToast('Opening eBay...', 'success');
-    }
     return;
   }
 
@@ -899,38 +894,6 @@ function dl(name,type,content) {
   a.href = URL.createObjectURL(new Blob([content],{type:type}));
   a.download = name; a.click();
 }
-
-// Bulk export for eBay (tab-separated file with timestamp)
-document.getElementById('bulkCopyBtn').onclick = function() {
-  if (!log.length) { showToast('No items to export', 'error'); return; }
-  var headers = ['PART ID','TITLE','PRICE','CATEGORY','PART NUMBER 1','PART NUMBER 2','MANUFACTURER','MODEL','MFG DATE','DESCRIPTION','SHIPPING'];
-  var rows = [headers.join('\t')];
-  log.forEach(function(p) {
-    var l = p.ebayListing || {};
-    rows.push([
-      p.id,
-      l.title || '',
-      l.price ? '$' + l.price : '',
-      l.category || '',
-      p.partNumber1 || '',
-      p.partNumber2 || '',
-      p.manufacturer || '',
-      p.model || '',
-      p.mfgDate || '',
-      l.description || '',
-      l.shippingNote || ''
-    ].join('\t'));
-  });
-  var text = rows.join('\n');
-  var now = new Date();
-  var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') +
-            '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
-  dl('ebay-listings-' + ts + '.tsv', 'text/tab-separated-values', text);
-  showToast(log.length + ' items exported!', 'success');
-};
-
-// eBay Draft CSV export
-document.getElementById('ebayDraftBtn').onclick = exportEbayDraft;
 
 // Clear all
 document.getElementById('clearAllBtn').onclick = function() {
