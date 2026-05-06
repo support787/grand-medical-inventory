@@ -960,9 +960,9 @@ function exportEbayDraft() {
   if (!log.length) { showToast('No items to export', 'error'); return; }
   var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format';
   var rows = [
-    '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,',
+    '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,,,',
     '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,',
-    '"#INFO After you have successfully uploaded your draft from the Seller Hub Reports tab, complete your drafts to active listings here: https://www.ebay.com/sh/lst/drafts",,,,,,,,,,',
+    '#INFO After you have successfully uploaded your draft complete your drafts here: https://www.ebay.com/sh/lst/drafts,,,,,,,,,,',
     '#INFO,,,,,,,,,,',
     header
   ];
@@ -973,6 +973,10 @@ function exportEbayDraft() {
     var price = (l.price || p.price || '').replace(/[^0-9.]/g, '');
     var desc = l.description || '';
     var imageUrl = p.imageUrls ? p.imageUrls.split(';')[0] : '';
+    // Clean Firebase URL for eBay - remove token parameter
+    if (imageUrl && imageUrl.indexOf('firebasestorage') > -1) {
+      imageUrl = imageUrl.split('?')[0] + '?alt=media';
+    }
     var catId = getEbayCategory(p.modality || '');
     var sku = p.id;
 
