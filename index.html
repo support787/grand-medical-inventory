@@ -478,9 +478,11 @@ function generateListing(part, photos) {
     mfgDate: part.mfgDate, notes: part.notes
   }, null, 2);
 
-  content.push({type:'text', text:'Create a professional eBay listing AND a website description for this used medical/industrial equipment.\n\nItem data:\n' + itemJson + '\n\nReturn ONLY valid JSON:\n{\n  "title": "eBay title max 80 chars, include brand model name and key part numbers",\n  "category": "specific eBay category path",\n  "price": "realistic market price numbers only e.g. 1895.00",\n  "suggestedPriceReason": "one sentence explaining price",\n  "description": "Technical 2-3 sentence parts catalog description. State model name, part numbers and key specs like voltage power filtration. No marketing no compatibility phrases no condition mentions.",\n  "websiteDescription": "Technical parts catalog entry. State model name, part numbers and key specs. No marketing or compatibility statements.",\n  "shippingNote": "brief shipping note"\n}'});
+  content.push({type:'text', text:'Create a professional eBay listing AND a website description for this used medical/industrial equipment.\n\nItem data:\n' + itemJson + '\n\nReturn ONLY valid JSON:\n{\n  "title": "eBay title max 80 chars, include brand model name and key part numbers. If manufacture year is known include it at the start e.g. 2019 Philips...",\n  "category": "specific eBay category path",\n  "price": "realistic market price numbers only e.g. 1895.00",\n  "suggestedPriceReason": "one sentence explaining price",\n  "description": "2-3 sentences: state model name, part numbers and key specs like voltage power filtration. Then end with: Item was removed from a system that was working properly until deinstallation. No marketing no compatibility phrases.",\n  "websiteDescription": "Technical parts catalog entry. State model name, part numbers and key specs. No marketing or compatibility statements.",\n  "shippingNote": "brief shipping note"\n}'});
 
-  var sys = 'You write terse technical descriptions for used medical parts listings. RULES: Only state facts from the data. Never add sentences explaining what the part does or what it is designed for. Never say compatible with, designed for, suitable for, ideal for, or any similar phrase. A good description example: Philips MRC 200 X-Ray Tube Housing. Part numbers 9890 000 85142 / 9890 000 04701. 125kV, 2.5Al filtration, 0.5/0.8 focal spots. Manufactured March 2009. Return ONLY valid JSON, no markdown.';
+  var BOILERPLATE = '\n\nSHIPPING: Buyer pickup in person, buyer sending a shipping label, or seller handling shipment at buyer cost.\n\nRETURNS: Return accepted if item stops functioning within 30 days of sale. Defective item must be returned to seller at buyer cost.\n\nFDA NOTICE: The sale of this item may be subject to regulation by the U.S. Food and Drug Administration and state and local regulatory agencies. If so, do not bid on this item unless you are an authorized purchaser. If the item is subject to FDA regulation, we will verify your status as an authorized purchaser before shipping.\n\nDISCLAIMER: Regardless of the origin of the equipment, documentation provided or identification appearing upon the equipment, the equipment described and offered here is in no way certified for, recommended for, or offered for any specific use. The purchaser agrees that the seller shall not be held responsible or liable for any injuries or damages, whether incidental or consequential, associated in any way with the equipment. The purchaser, by bidding on this equipment, indicates their acknowledgment of, and agreement to the terms of this disclaimer.';
+
+var sys = 'You write terse technical descriptions for used medical parts listings. RULES: Only state facts from the data. Never add sentences explaining what the part does or what it is designed for. Never say compatible with, designed for, suitable for, ideal for, or any similar phrase. A good description example: Philips MRC 200 X-Ray Tube Housing. Part numbers 9890 000 85142 / 9890 000 04701. 125kV, 2.5Al filtration, 0.5/0.8 focal spots. Manufactured March 2009. Return ONLY valid JSON, no markdown.';
   return callClaude([{role:'user', content:content}], sys).then(function(raw) {
     try {
       var listing = JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -767,7 +769,7 @@ document.getElementById('partsList').onclick = function(e) {
     ];
     function csvF(val) { return '"' + String(val||'').replace(/"/g,'""') + '"'; }
     var price = (l.price||'').replace(/[^0-9.]/g,'');
-    rows.push(['Draft', csvF(part.id), catId, csvF((l.title||'').substring(0,80)), '', price, '1', csvF(imageUrl), '3000', csvF(l.description||''), 'FixedPrice'].join(','));
+    rows.push(['Draft', csvF(part.id), catId, csvF((l.title||'').substring(0,80)), '', price, '1', csvF(imageUrl), '3000', csvF((l.description||'') + BOILERPLATE), 'FixedPrice'].join(','));
     var now = new Date();
     var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
     dl('eBay-draft-' + part.id + '-' + ts + '.csv', 'text/csv', rows.join('\n'));
@@ -910,14 +912,7 @@ document.getElementById('clearAllBtn').onclick = function() {
 };
 
 // eBay Category IDs by modality
-var EBAY_CATEGORIES = {
-  'CT':'184537','MRI':'184520','CATH':'184520','C-ARM':'184537',
-  'X-RAY':'184537','MAMMO':'184537','PET/CT':'184537','TUBE':'184537',
-  'SPECT/CT':'184537','ULTRASOUND':'184520','CR/PRINTER':'184537',
-  'INJECTOR':'184520','MONITOR':'58058','UPS':'182086',
-  'POWER SUPPLY':'183064','WORKSTATION':'179','NETWORK':'11176',
-  'DEFAULT':'184520'
-};
+var EBAY_CATEGORIES = {'DEFAULT':'184520'};
 
 function getEbayCategory(modality) {
   return EBAY_CATEGORIES[modality] || EBAY_CATEGORIES['DEFAULT'];
@@ -963,7 +958,7 @@ function exportEbayDraft() {
       '1',
       csvField(imageUrl),
       '3000',  // Used
-      csvField(desc),
+      csvField(desc + BOILERPLATE),
       'FixedPrice'
     ].join(','));
   });
