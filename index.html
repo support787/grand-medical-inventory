@@ -758,17 +758,21 @@ document.getElementById('partsList').onclick = function(e) {
       imageUrl = imageUrl.split('?')[0] + '?alt=media';
     }
     var catId = getEbayCategory(part.modality || '');
-    var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format';
+    var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format,C:Country/Region of Manufacture';
     var rows = [
-      '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,,,',
-      '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,',
-      '#INFO After you have successfully uploaded your draft complete your drafts here: https://www.ebay.com/sh/lst/drafts,,,,,,,,,,',
-      '#INFO,,,,,,,,,,',
+      '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,,,,',
+      '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,,',
+      '#INFO After you have successfully uploaded your draft complete your drafts here: https://www.ebay.com/sh/lst/drafts,,,,,,,,,,,',
+      '#INFO,,,,,,,,,,,',
       header
     ];
     function csvF(val) { return '"' + String(val||'').replace(/"/g,'""') + '"'; }
     var price = (l.price||'').replace(/[^0-9.]/g,'');
-    rows.push(['Draft', csvF(part.id), catId, csvF((l.title||'').substring(0,80)), '', price, '1', csvF(imageUrl), '3000', csvF((l.description||'') + BOILERPLATE), 'FixedPrice'].join(','));
+    // Build pipe-separated image URLs for all photos
+    var allImageUrls = part.imageUrls ? part.imageUrls.split(';').filter(Boolean).map(function(u){
+      return u.indexOf('firebasestorage') > -1 ? u.split('?')[0] + '?alt=media' : u;
+    }).join('|') : imageUrl;
+    rows.push(['Draft', csvF(part.id), catId, csvF((l.title||'').substring(0,80)), 'Does not apply', price, '1', csvF(allImageUrls), '3000', csvF('Condition: Used - Removed from a fully functioning system prior to deinstallation.\n\n' + (l.description||'') + BOILERPLATE), 'FixedPrice', csvF('United States')].join(','));
     var now = new Date();
     var ts = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
     dl('eBay-draft-' + part.id + '-' + ts + '.csv', 'text/csv', rows.join('\n'));
@@ -911,22 +915,22 @@ document.getElementById('clearAllBtn').onclick = function() {
 };
 
 // eBay Category IDs by modality
-var EBAY_CATEGORIES = {'DEFAULT':'184520'};
+var EBAY_CATEGORIES = {'DEFAULT':'185256'};
 
 function getEbayCategory(modality) {
   return EBAY_CATEGORIES[modality] || EBAY_CATEGORIES['DEFAULT'];
 }
 
-var BOILERPLATE = '\n\nSHIPPING: Buyer pickup in person, buyer sending a shipping label, or seller handling shipment at buyer cost.\n\nRETURNS: Return accepted if item stops functioning within 30 days of sale. Defective item must be returned to seller at buyer cost.\n\nFDA NOTICE: The sale of this item may be subject to regulation by the U.S. Food and Drug Administration and state and local regulatory agencies. If so, do not bid on this item unless you are an authorized purchaser. If the item is subject to FDA regulation, we will verify your status as an authorized purchaser before shipping.\n\nDISCLAIMER: Regardless of the origin of the equipment, documentation provided or identification appearing upon the equipment, the equipment described and offered here is in no way certified for, recommended for, or offered for any specific use. The purchaser agrees that the seller shall not be held responsible or liable for any injuries or damages, whether incidental or consequential, associated in any way with the equipment. The purchaser, by bidding on this equipment, indicates their acknowledgment of, and agreement to the terms of this disclaimer.';
+var BOILERPLATE = '\n\nSHIPPING: UPS Ground, $35.00 flat rate. Buyer pickup available upon arrangement.\n\nRETURNS: 30-day returns accepted. Buyer pays return shipping. No international returns.\n\nFDA NOTICE: The sale of this item may be subject to regulation by the U.S. Food and Drug Administration and state and local regulatory agencies. If so, do not bid on this item unless you are an authorized purchaser. If the item is subject to FDA regulation, we will verify your status as an authorized purchaser before shipping.\n\nDISCLAIMER: Regardless of the origin of the equipment, documentation provided or identification appearing upon the equipment, the equipment described and offered here is in no way certified for, recommended for, or offered for any specific use. The purchaser agrees that the seller shall not be held responsible or liable for any injuries or damages, whether incidental or consequential, associated in any way with the equipment. The purchaser, by bidding on this equipment, indicates their acknowledgment of, and agreement to the terms of this disclaimer.';
 
 function exportEbayDraft() {
   if (!log.length) { showToast('No items to export', 'error'); return; }
-  var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format';
+  var header = 'Action(SiteID=US|Country=US|Currency=USD|Version=1193|CC=UTF-8),Custom label (SKU),Category ID,Title,UPC,Price,Quantity,Item photo URL,Condition ID,Description,Format,C:Country/Region of Manufacture';
   var rows = [
-    '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,,,',
-    '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,',
-    '#INFO After you have successfully uploaded your draft complete your drafts here: https://www.ebay.com/sh/lst/drafts,,,,,,,,,,',
-    '#INFO,,,,,,,,,,',
+    '#INFO,Version=0.0.2,Template= eBay-draft-listings-template_US,,,,,,,,,,,',
+    '#INFO Action and Category ID are required fields. 1) Set Action to Draft 2) Please find the category ID for your listings here: https://pages.ebay.com/sellerinformation/news/categorychanges.html,,,,,,,,,,,',
+    '#INFO After you have successfully uploaded your draft complete your drafts here: https://www.ebay.com/sh/lst/drafts,,,,,,,,,,,',
+    '#INFO,,,,,,,,,,,',
     header
   ];
 
@@ -949,18 +953,23 @@ function exportEbayDraft() {
       return '"' + val + '"';
     }
 
+    // Build pipe-separated image URLs for all photos
+    var allImageUrls = p.imageUrls ? p.imageUrls.split(';').filter(Boolean).map(function(u){
+      return u.indexOf('firebasestorage') > -1 ? u.split('?')[0] + '?alt=media' : u;
+    }).join('|') : imageUrl;
     rows.push([
       'Draft',
       csvField(sku),
       catId,
       csvField(title),
-      '',  // UPC blank
+      'Does not apply',  // UPC
       price || '',
       '1',
-      csvField(imageUrl),
+      csvField(allImageUrls),
       '3000',  // Used
-      csvField(desc + BOILERPLATE),
-      'FixedPrice'
+      csvField('Condition: Used - Removed from a fully functioning system prior to deinstallation.\n\n' + desc + BOILERPLATE),
+      'FixedPrice',
+      csvField('United States')  // Country of Origin
     ].join(','));
   });
 
